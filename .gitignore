@@ -1,0 +1,52 @@
+# Secrets / env
+.env
+.env.*
+.env.r2
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log
+bun.lockb
+*.tgz
+
+# Builds
+**/dist/
+**/target/
+**/build/
+out/
+.next/
+*.tsbuildinfo
+
+# Logs
+*.log
+logs
+*.log.npm
+*.log.yarn
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebaserc
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+
+# IDEs
+.idea/
+.vscode/
+
+# Misc
+.history/
+tmp/
+temp/
+
+#cloudflare
+.worker_url

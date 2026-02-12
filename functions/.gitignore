@@ -1,0 +1,33 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Dependencies
+node_modules/
+
+# Build
+lib/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Testing
+coverage/
+test-results/
+
+# IDEs
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+*.swp
+
