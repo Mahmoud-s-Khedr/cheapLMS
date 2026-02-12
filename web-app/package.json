@@ -1,0 +1,29 @@
+{
+  "name": "cheapLMS-web-app",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .js,.jsx"
+  },
+  "dependencies": {
+    "firebase": "^11.x",
+    "hls.js": "^1.x",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^6.x"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@vitejs/plugin-react": "^4.x",
+    "autoprefixer": "^10.x",
+    "eslint": "^9.x",
+    "eslint-plugin-react": "^7.x",
+    "postcss": "^8.x",
+    "tailwindcss": "^4.x",
+    "vite": "^5.x"
+  }
+}
