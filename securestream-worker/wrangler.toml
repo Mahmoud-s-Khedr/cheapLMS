@@ -1,0 +1,14 @@
+name = "securestream-worker"
+main = "src/index.js"
+compatibility_date = "2024-02-08"
+
+# Bind R2 Bucket
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "minilsm"
+preview_bucket_name = "minilsm"
+
+[vars]
+# Environment variables for local development
+ALLOWED_ORIGIN = "http://localhost:5173,http://localhost:4173,https://test-e5d8b.web.app,http://test-e5d8b.web.app" # Vite default port
+JWT_SECRET = "dev-secret-key-change-me"
