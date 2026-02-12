@@ -1,0 +1,115 @@
+{
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/ffmpeg",
+          "cmd": "ffmpeg",
+          "sidecar": true
+        }
+      ]
+    },
+    "shell:allow-open",
+    "fs:default",
+    {
+      "identifier": "fs:allow-read",
+      "allow": [
+        {
+          "path": "/tmp"
+        },
+        {
+          "path": "/tmp/**"
+        },
+        {
+          "path": "/tmp/cheaplms_processing"
+        },
+        {
+          "path": "/tmp/cheaplms_processing/**"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "/tmp"
+        },
+        {
+          "path": "/tmp/**"
+        },
+        {
+          "path": "/tmp/cheaplms_processing"
+        },
+        {
+          "path": "/tmp/cheaplms_processing/**"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        {
+          "path": "/tmp"
+        },
+        {
+          "path": "/tmp/**"
+        },
+        {
+          "path": "/tmp/cheaplms_processing"
+        },
+        {
+          "path": "/tmp/cheaplms_processing/**"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing/**"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        {
+          "path": "/tmp"
+        },
+        {
+          "path": "/tmp/**"
+        },
+        {
+          "path": "/tmp/cheaplms_processing"
+        },
+        {
+          "path": "/tmp/cheaplms_processing/**"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing"
+        },
+        {
+          "path": "$TEMP/cheaplms_processing/**"
+        }
+      ]
+    },
+    "dialog:default"
+  ]
+}
