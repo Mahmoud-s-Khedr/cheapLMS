@@ -2,6 +2,7 @@ use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandEvent;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::PathBuf;
 use tauri::Emitter;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,7 +24,10 @@ pub struct ProcessConfig {
 
 #[tauri::command]
 async fn probe_media(app: tauri::AppHandle, path: String) -> Result<ProbeResult, String> {
-    let sidecar_command = app.shell().sidecar("ffmpeg").map_err(|e| e.to_string())?;
+    let sidecar_command = app
+        .shell()
+        .sidecar("ffmpeg")
+        .map_err(|e| format!("FFmpeg sidecar not found. Ensure target binary exists in src-tauri/binaries (error: {})", e))?;
     let (mut rx, mut _child) = sidecar_command
         .args(["-i", &path, "-hide_banner"]) 
         .spawn()
@@ -90,12 +94,13 @@ async fn process_video(app: tauri::AppHandle, config: ProcessConfig) -> Result<S
             _ => ("scale=-2:720", "2500k", "2800000"), // Default
         };
 
-        // Create subdir (e.g., /tmp/.../720p)
-        let quality_dir = format!("{}/{}", config.output_dir, quality);
+        let quality_dir = PathBuf::from(&config.output_dir).join(quality);
         fs::create_dir_all(&quality_dir).map_err(|e| e.to_string())?;
 
-        let segment_filename = format!("{}/%03d.ts", quality_dir);
-        let playlist_filename = format!("{}/playlist.m3u8", quality_dir);
+        let segment_filename = quality_dir.join("%03d.ts");
+        let playlist_filename = quality_dir.join("playlist.m3u8");
+        let segment_filename_str = segment_filename.to_string_lossy().to_string();
+        let playlist_filename_str = playlist_filename.to_string_lossy().to_string();
 
         let bufsize = format!("{}k", (bitrate.trim_end_matches('k').parse::<u32>().unwrap_or(2500) * 2));
 
@@ -116,11 +121,14 @@ async fn process_video(app: tauri::AppHandle, config: ProcessConfig) -> Result<S
             "-b:v", bitrate,
             "-maxrate", bitrate,
             "-bufsize", &bufsize,
-            "-hls_segment_filename", &segment_filename,
-            &playlist_filename
+            "-hls_segment_filename", &segment_filename_str,
+            &playlist_filename_str
         ];
 
-        let sidecar_command = app.shell().sidecar("ffmpeg").map_err(|e| e.to_string())?;
+        let sidecar_command = app
+            .shell()
+            .sidecar("ffmpeg")
+            .map_err(|e| format!("FFmpeg sidecar not found. Ensure target binary exists in src-tauri/binaries (error: {})", e))?;
         let (mut rx, mut _child) = sidecar_command
             .args(&args)
             .spawn()
@@ -176,7 +184,7 @@ async fn process_video(app: tauri::AppHandle, config: ProcessConfig) -> Result<S
     }
 
     // Write Master Playlist
-    let master_path = format!("{}/master.m3u8", config.output_dir);
+    let master_path = PathBuf::from(&config.output_dir).join("master.m3u8");
     fs::write(&master_path, master_playlist).map_err(|e| e.to_string())?;
 
     Ok("Conversion complete".to_string())
@@ -194,8 +202,17 @@ async fn generate_thumbnail(app: tauri::AppHandle, input_path: String, output_pa
     let seconds = seek_time % 60.0;
     let seek_str = format!("{:02}:{:02}:{:05.2}", hours, minutes, seconds);
 
+    let output_path_buf = PathBuf::from(&output_path);
+    if let Some(parent_dir) = output_path_buf.parent() {
+        fs::create_dir_all(parent_dir).map_err(|e| e.to_string())?;
+    }
+    let output_path_str = output_path_buf.to_string_lossy().to_string();
+
     // 2. Extract single frame as JPEG, scaled to 640px wide
-    let sidecar_command = app.shell().sidecar("ffmpeg").map_err(|e| e.to_string())?;
+    let sidecar_command = app
+        .shell()
+        .sidecar("ffmpeg")
+        .map_err(|e| format!("FFmpeg sidecar not found. Ensure target binary exists in src-tauri/binaries (error: {})", e))?;
     let (mut rx, mut _child) = sidecar_command
         .args([
             "-ss", &seek_str,
@@ -204,7 +221,7 @@ async fn generate_thumbnail(app: tauri::AppHandle, input_path: String, output_pa
             "-vf", "scale=640:-1",
             "-q:v", "2",
             "-y",
-            &output_path,
+            &output_path_str,
         ])
         .spawn()
         .map_err(|e| e.to_string())?;

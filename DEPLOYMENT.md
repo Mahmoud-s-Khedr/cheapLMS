@@ -175,16 +175,19 @@ npx firebase init hosting
 ## 5. Admin App (Desktop)
 ### Configure
 1. **R2 credentials**
-   - Create `.env.r2` at repo root:
-     - `R2_ACCOUNT_ID`
-     - `R2_ACCESS_KEY_ID`
-     - `R2_SECRET_ACCESS_KEY`
-     - `R2_BUCKET_NAME`
+   - Add these keys to `admin-app/.env.local`:
+     - `VITE_R2_ACCOUNT_ID`
+     - `VITE_R2_ACCESS_KEY_ID`
+     - `VITE_R2_SECRET_ACCESS_KEY`
+     - `VITE_R2_BUCKET_NAME`
+     - `VITE_CLOUDFLARE_WORKER_URL`
 2. **Firebase client config (Admin app)**
    - Create `admin-app/.env.local`:
      - `VITE_FIREBASE_API_KEY`
      - `VITE_FIREBASE_AUTH_DOMAIN`
      - `VITE_FIREBASE_PROJECT_ID`
+     - `VITE_FIREBASE_STORAGE_BUCKET`
+     - `VITE_FIREBASE_MESSAGING_SENDER_ID`
      - `VITE_FIREBASE_APP_ID`
 3. **Enable Email/Password auth (Admin login)**
   - Firebase Console → Authentication → Sign-in method → enable Email/Password.
@@ -207,6 +210,7 @@ cd admin-app
 npm install
 npm run tauri build
 ```
+Note: `npm run pretauri ...` now auto-prepares the correct FFmpeg sidecar for your current OS.
 
 ### Build (Windows)
 Install Rust, Node.js, Visual Studio Build Tools (C++), and WebView2 Runtime, then:
@@ -215,12 +219,13 @@ cd admin-app
 npm install
 npm run tauri build
 ```
+Note: Build natively on Windows to package the Windows FFmpeg sidecar.
 
 ### Cross-compile (Linux -> Windows)
 Possible but more fragile than a native Windows build. Use this only if you cannot build on Windows.
 
 ### Use
-- Sign in with Google.
+- Sign in with Email/Password.
 - Enter a `playlistId`, add videos, and start the queue.
 - The app processes videos to HLS, uploads the output folder to R2, then calls the Firebase callable `createVideo`.
 
@@ -254,8 +259,7 @@ Possible but more fragile than a native Windows build. Use this only if you cann
 - [x] Verify at `https://your-project-id.web.app`
 
 ### Phase 4: Admin App (Desktop)
-- [x] Create `admin-app/.env.local` with Firebase Web config
-- [x] Create `.env.r2` with R2 credentials (at repo root)
+- [x] Create `admin-app/.env.local` with Firebase + R2 + Worker config
 - [x] Test locally: `npm run dev`
 - [x] Build for your OS: `npm run tauri build`
 

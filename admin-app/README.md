@@ -1,7 +1,44 @@
-# Tauri + React
+# Admin Desktop App (Tauri + React)
 
-This template should help get you started developing with Tauri and React in Vite.
+Desktop admin application for video processing (HLS), R2 upload, and metadata creation.
 
-## Recommended IDE Setup
+## Environment
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+Create `admin-app/.env.local`:
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+
+VITE_R2_ACCOUNT_ID=
+VITE_R2_ACCESS_KEY_ID=
+VITE_R2_SECRET_ACCESS_KEY=
+VITE_R2_BUCKET_NAME=
+
+VITE_CLOUDFLARE_WORKER_URL=
+```
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run tauri build
+```
+
+`npm run tauri ...` auto-runs FFmpeg sidecar preparation for the current OS.
+
+## Cross-platform notes
+
+- Build natively on each target OS for best results.
+- Video processing temp files are written under the OS temp directory.
+- Admin login uses Firebase Email/Password auth.

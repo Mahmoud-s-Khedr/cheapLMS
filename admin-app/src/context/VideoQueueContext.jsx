@@ -86,7 +86,8 @@ export function VideoQueueProvider({ children }) {
             }
 
             // 2. Transcode
-            const outputDir = `/tmp/cheaplms_processing/${item.id}`;
+            const { join, tempDir } = await import("@tauri-apps/api/path");
+            const outputDir = await join(await tempDir(), "cheaplms_processing", item.id);
             console.log("Transcoding to:", outputDir);
 
             await invoke("process_video", {
@@ -107,7 +108,7 @@ export function VideoQueueProvider({ children }) {
                 thumbnailLocalPath = item.thumbnailPath;
             } else {
                 // Auto-generate thumbnail from video
-                thumbnailLocalPath = `${outputDir}/thumbnail.jpg`;
+                thumbnailLocalPath = await join(outputDir, "thumbnail.jpg");
                 try {
                     await invoke("generate_thumbnail", {
                         inputPath: item.path,
@@ -224,14 +225,12 @@ export function VideoQueueProvider({ children }) {
                 }
 
                 // Construct R2 Key
-                // We want: videos/{itemId}/{relativePath}
-                // filePath: /tmp/cheaplms_processing/{itemId}/720p/playlist.m3u8
-                // dir:      /tmp/cheaplms_processing/{itemId}
-                // relative: 720p/playlist.m3u8
-
-                // Hacky relative path replacement
-                // Ensure we don't have double slashes
-                const relativePath = filePath.replace(dir, "").replace(/^[/\\]/, "");
+                const normalizedDir = dir.replace(/\\+$/, "");
+                const normalizedFilePath = filePath;
+                const relativePath = normalizedFilePath
+                    .replace(normalizedDir, "")
+                    .replace(/^[/\\]/, "")
+                    .replace(/\\/g, "/");
                 const r2Key = `videos/${itemId}/${relativePath}`;
 
                 // Determine Content Type
@@ -307,7 +306,7 @@ export function VideoQueueProvider({ children }) {
             await upload.done();
 
             // Construct public thumbnail URL via Worker
-            const workerUrl = import.meta.env.VITE_WORKER_URL || '';
+            const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || '';
             return `${workerUrl}/${r2Key}`;
         } catch (error) {
             console.error("Thumbnail upload failed:", error);
