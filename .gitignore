@@ -1,6 +1,5 @@
 # Secrets / env
 .env
-.env.*
 .env.r2
 .DS_Store
 

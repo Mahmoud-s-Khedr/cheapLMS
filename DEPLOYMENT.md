@@ -16,7 +16,8 @@
     ]
     ```
 3.  **API Tokens:** Generate Admin Read/Write token.
-4.  **Save Credentials:** Add to `.env.r2` in project root.
+4.  **Save Credentials:** Add to `.env.r2` in project root. as in `.env.example.r2`:
+   
 
 **Notes**
 - The current Admin desktop app uploads to R2 from the Rust backend via the S3 API (not from the browser/WebView), so R2 CORS does not affect Admin uploads.
@@ -40,7 +41,7 @@ npm run deploy
 ```
 
 ### Verify
-- Copy the worker URL (e.g., `https://securestream-worker.yourname.workers.dev`).
+- Copy the worker URL (e.g., `https://securestream-worker.yourname.workers.dev`) and save it in `worker.url`
 - Save it for the frontend config.
 
 ## 3. Firebase Backend
