@@ -5,6 +5,50 @@ import { VideoService } from "../services/VideoService";
 
 const VideoQueueContext = createContext();
 
+const getErrorMessage = (error) => {
+    if (!error) return "Unknown error";
+    if (typeof error === "string") return error;
+    if (error.message) return error.message;
+    return JSON.stringify(error);
+};
+
+const classifyUploadError = (error) => {
+    const message = getErrorMessage(error);
+
+    if (/failed to fetch|networkerror|load failed/i.test(message)) {
+        return "network_or_cors";
+    }
+
+    if (/forbidden|accessdenied|signaturedoesnotmatch|invalidaccesskeyid/i.test(message)) {
+        return "auth_or_signature";
+    }
+
+    return "unknown";
+};
+
+const getEndpointHost = (endpoint) => {
+    try {
+        return endpoint ? new URL(endpoint).host : "unknown";
+    } catch {
+        return "unknown";
+    }
+};
+
+const formatUploadFailure = ({ fileName, r2Key, appOrigin, endpointHost, category, error }) => {
+    const baseMessage = getErrorMessage(error);
+    const details = `origin=${appOrigin} endpoint=${endpointHost} key=${r2Key}`;
+
+    if (category === "network_or_cors") {
+        return `Failed to upload ${fileName}: ${baseMessage}. Upload request was blocked before response (${details}). For Windows release, add your packaged app origin (for example https://tauri.localhost) to R2 AllowedOrigins.`;
+    }
+
+    if (category === "auth_or_signature") {
+        return `Failed to upload ${fileName}: ${baseMessage}. R2 rejected credentials/signature (${details}). Verify VITE_R2_* build-time values.`;
+    }
+
+    return `Failed to upload ${fileName}: ${baseMessage} (${details}).`;
+};
+
 export function VideoQueueProvider({ children }) {
     const [queue, setQueue] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -160,11 +204,18 @@ export function VideoQueueProvider({ children }) {
             // Import dynamically to avoid build issues if dependencies aren't ready
             const { readFile, readDir } = await import("@tauri-apps/plugin-fs");
             const { Upload } = await import("@aws-sdk/lib-storage");
-            const { r2Client, R2_BUCKET_NAME } = await import("../config/r2");
+            const { r2Client, R2_BUCKET_NAME, R2_CONFIG_ISSUES, R2_ENDPOINT } = await import("../config/r2");
             const { join } = await import("@tauri-apps/api/path");
+            const appOrigin = window?.location?.origin || "unknown";
+            const endpointHost = getEndpointHost(R2_ENDPOINT);
 
             // Validate R2 Config
-            if (!r2Client) throw new Error("R2 Client is not initialized. Check your .env file and src/config/r2.js.");
+            if (!r2Client) {
+                const issueSummary = Array.isArray(R2_CONFIG_ISSUES) && R2_CONFIG_ISSUES.length > 0
+                    ? R2_CONFIG_ISSUES.join(" ")
+                    : "R2 client initialization failed.";
+                throw new Error(`R2 Client is not initialized. ${issueSummary}`);
+            }
             if (!R2_BUCKET_NAME) throw new Error("R2 Bucket Name is missing. Check VITE_R2_BUCKET_NAME in .env.");
 
             console.log("R2 Config Validated. Bucket:", R2_BUCKET_NAME);
@@ -264,8 +315,25 @@ export function VideoQueueProvider({ children }) {
                     uploadedFiles++;
                     console.log(`Uploaded ${file.name}`);
                 } catch (uploadErr) {
-                    console.error(`Failed to upload ${file.name} to R2:`, uploadErr);
-                    throw new Error(`Failed to upload ${file.name}: ${uploadErr.message}`);
+                    const category = classifyUploadError(uploadErr);
+                    const diagnosticError = formatUploadFailure({
+                        fileName: file.name,
+                        r2Key,
+                        appOrigin,
+                        endpointHost,
+                        category,
+                        error: uploadErr,
+                    });
+
+                    console.error(`Failed to upload ${file.name} to R2:`, {
+                        category,
+                        appOrigin,
+                        endpointHost,
+                        r2Key,
+                        errorMessage: getErrorMessage(uploadErr),
+                    });
+
+                    throw new Error(diagnosticError);
                 }
             }
 

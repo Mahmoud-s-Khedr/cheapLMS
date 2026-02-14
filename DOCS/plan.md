@@ -74,7 +74,7 @@
 **Solution:** Upload the entire HLS output folder with a bounded concurrency pool (multiple files in-flight), and show **aggregated progress** based on total bytes.
 
 **Implementation Notes (current implementation):**
-- Upload runs from the Tauri **Rust backend** using the S3-compatible API (avoids browser/WebView CORS issues and avoids exposing R2 secrets in JS).
+- Upload currently runs from the Tauri React/WebView layer using the AWS SDK, so browser/WebView CORS rules apply in packaged desktop builds.
 - Walk the output directory, compute total bytes, then upload files concurrently (e.g., 6 workers).
 - Emit a single aggregate percent value to the UI (bytes uploaded / total bytes).
 - Retry failed uploads up to 3 times with exponential backoff.

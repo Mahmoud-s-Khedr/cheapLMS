@@ -7,7 +7,13 @@
     ```json
     [
       {
-        "AllowedOrigins": ["http://localhost:3000", "http://localhost:5173", "http://localhost:1420"],
+        "AllowedOrigins": [
+          "http://localhost",
+          "http://localhost:5173",
+          "http://localhost:1420",
+          "https://tauri.localhost",
+          "tauri://localhost"
+        ],
         "AllowedMethods": ["PUT", "GET", "HEAD"],
         "AllowedHeaders": ["*"],
         "ExposeHeaders": ["ETag"],
@@ -20,8 +26,9 @@
    
 
 **Notes**
-- The current Admin desktop app uploads to R2 from the Rust backend via the S3 API (not from the browser/WebView), so R2 CORS does not affect Admin uploads.
-- CORS still matters if you later add direct browser uploads.
+- The current Admin desktop app uploads to R2 from the React/WebView layer using the AWS SDK, so R2 CORS affects Admin uploads in both dev and release builds.
+- If Windows release uploads fail with `Failed to fetch`, check the packaged app request origin in logs and add that origin to `AllowedOrigins`.
+- Keep `AllowedOrigins` limited to exact origins you use for development and packaged builds.
 
 ## 2. Cloudflare Worker (Security Gateway)
 ### Authenticate
@@ -228,6 +235,13 @@ Possible but more fragile than a native Windows build. Use this only if you cann
 - Sign in with Email/Password.
 - Enter a `playlistId`, add videos, and start the queue.
 - The app processes videos to HLS, uploads the output folder to R2, then calls the Firebase callable `createVideo`.
+
+### Troubleshooting (Windows release)
+- **Error:** `Upload failed: Failed to upload 000.ts: Failed to fetch`
+- **Likely cause:** R2 CORS does not include the packaged app origin.
+- **What to check:** In app logs, capture the upload diagnostics fields (`origin`, `endpoint`, `key`) and verify `origin` is listed in R2 `AllowedOrigins`.
+- **Fix:** Add the exact packaged origin (for example `https://tauri.localhost`) to R2 CORS and retry upload.
+- **If still failing:** Re-check `VITE_R2_*` variables used at build time for the Windows release binary.
 
 ---
 
