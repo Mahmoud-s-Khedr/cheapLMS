@@ -140,7 +140,8 @@ export function VideoQueueProvider({ children }) {
                     input_path: item.path,
                     output_dir: outputDir,
                     qualities: item.qualities || ["720p"],
-                    segment_duration: parseInt(localStorage.getItem("hlsSegmentDuration") || "4", 10)
+                    segment_duration: parseInt(localStorage.getItem("hlsSegmentDuration") || "4", 10),
+                    encoder: localStorage.getItem("ffmpegEncoder") || "libx264"
                 }
             });
 
@@ -182,6 +183,7 @@ export function VideoQueueProvider({ children }) {
 
             // 6. Save to Firestore
             await VideoService.create({
+                id: item.id, // Use the same UUID for Firestore as R2
                 title: item.name,
                 playlistId: item.playlistId,
                 status: "ready",
@@ -392,11 +394,98 @@ export function VideoQueueProvider({ children }) {
         setQueue(prev => prev.filter(item => item.id !== id));
     };
 
+    const deleteVideo = async (videoId) => {
+        try {
+            console.log(`[deleteVideo] Starting deletion for videoId: ${videoId}`);
+
+            // Dynamically import S3 commands to ensure SDK is available
+            const { ListObjectsV2Command, DeleteObjectsCommand } = await import("@aws-sdk/client-s3");
+            const { r2Client, R2_BUCKET_NAME } = await import("../config/r2");
+
+            if (!r2Client) {
+                console.error("[deleteVideo] R2 Client is null. Check config.");
+                throw new Error("R2 Client not initialized");
+            }
+            console.log(`[deleteVideo] Using Bucket: ${R2_BUCKET_NAME}`);
+
+            // 1. Delete Video Folder from R2
+            const folderPrefix = `videos/${videoId}/`;
+            console.log(`[deleteVideo] Listing objects with prefix: ${folderPrefix}`);
+
+            let continuationToken = null;
+            let deletedCount = 0;
+
+            do {
+                const listCmd = new ListObjectsV2Command({
+                    Bucket: R2_BUCKET_NAME,
+                    Prefix: folderPrefix,
+                    ContinuationToken: continuationToken
+                });
+                const listRes = await r2Client.send(listCmd);
+
+                console.log(`[deleteVideo] List response: keyCount=${listRes.KeyCount}, contents=${listRes.Contents?.length || 0}`);
+
+                if (listRes.Contents && listRes.Contents.length > 0) {
+                    const keysToDelete = listRes.Contents.map(obj => ({ Key: obj.Key }));
+                    console.log(`[deleteVideo] Deleting ${keysToDelete.length} keys:`, keysToDelete.map(k => k.Key));
+
+                    const deleteCmd = new DeleteObjectsCommand({
+                        Bucket: R2_BUCKET_NAME,
+                        Delete: {
+                            Objects: keysToDelete
+                        }
+                    });
+                    const deleteRes = await r2Client.send(deleteCmd);
+                    console.log(`[deleteVideo] Delete response:`, deleteRes);
+
+                    deletedCount += keysToDelete.length;
+                    console.log(`[deleteVideo] Batch deleted ${keysToDelete.length} files.`);
+                } else {
+                    console.log(`[deleteVideo] No files found for prefix: ${folderPrefix}`);
+                }
+
+                continuationToken = listRes.NextContinuationToken;
+            } while (continuationToken);
+
+            // 2. Delete Thumbnail from R2
+            const thumbPrefix = `thumbnails/${videoId}`;
+            console.log(`[deleteVideo] Listing thumbnails with prefix: ${thumbPrefix}`);
+
+            const listThumbCmd = new ListObjectsV2Command({
+                Bucket: R2_BUCKET_NAME,
+                Prefix: thumbPrefix
+            });
+            const thumbRes = await r2Client.send(listThumbCmd);
+
+            if (thumbRes.Contents && thumbRes.Contents.length > 0) {
+                console.log(`[deleteVideo] Found thumbnail(s):`, thumbRes.Contents.map(o => o.Key));
+                await r2Client.send(new DeleteObjectsCommand({
+                    Bucket: R2_BUCKET_NAME,
+                    Delete: { Objects: thumbRes.Contents.map(o => ({ Key: o.Key })) }
+                }));
+                console.log("[deleteVideo] Deleted thumbnail from R2.");
+            } else {
+                console.log("[deleteVideo] No thumbnail found.");
+            }
+
+            // 3. Delete from Firestore
+            console.log("[deleteVideo] Deleting from Firestore...");
+            await VideoService.delete(videoId);
+
+            console.log("[deleteVideo] Video deleted successfully.");
+            return true;
+        } catch (error) {
+            console.error("[deleteVideo] Failed to delete video:", error);
+            throw error;
+        }
+    };
+
     const value = {
         queue,
         addToQueue,
         removeFromQueue,
-        isProcessing
+        isProcessing,
+        deleteVideo
     };
 
     return (

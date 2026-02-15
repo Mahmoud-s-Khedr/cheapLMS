@@ -14,7 +14,7 @@
           "https://tauri.localhost",
           "tauri://localhost"
         ],
-        "AllowedMethods": ["PUT", "GET", "HEAD"],
+        "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
         "AllowedHeaders": ["*"],
         "ExposeHeaders": ["ETag"],
         "MaxAgeSeconds": 3000

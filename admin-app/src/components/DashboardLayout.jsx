@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, ListVideo, Upload, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ListVideo, Upload, Users, Settings, LogOut, Film } from "lucide-react";
 
 export default function DashboardLayout() {
     const { logout, user } = useAuth();
@@ -46,6 +46,12 @@ export default function DashboardLayout() {
                         icon={Upload}
                         label="Queue"
                         active={isActive("/queue")}
+                    />
+                    <NavItem
+                        to="/videos"
+                        icon={Film}
+                        label="Videos"
+                        active={isActive("/videos")}
                     />
                     <NavItem
                         to="/users"
@@ -103,8 +109,8 @@ function NavItem({ to, icon: Icon, label, active }) {
         <Link
             to={to}
             className={`flex items-center rounded-lg px-4 py-3 transition-colors ${active
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-900/20"
-                    : "hover:bg-slate-800 hover:text-white"
+                ? "bg-blue-600 text-white shadow-md shadow-blue-900/20"
+                : "hover:bg-slate-800 hover:text-white"
                 }`}
         >
             <Icon className={`mr-3 h-5 w-5 ${active ? "text-blue-200" : "text-slate-400"}`} />
@@ -118,6 +124,7 @@ function getPageTitle(path) {
         case "/": return "Dashboard";
         case "/playlists": return "Playlists";
         case "/queue": return "Video Queue";
+        case "/videos": return "Video Library";
         case "/users": return "User Management";
         case "/settings": return "Settings";
         default: return "Admin Console";

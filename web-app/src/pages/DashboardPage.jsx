@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { db } from '../lib/firebase'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore'
 import Navigation from '../components/Navigation'
 import PlaylistCard from '../components/PlaylistCard'
 import VideoList from '../components/VideoList'
@@ -89,17 +89,30 @@ export default function DashboardPage() {
 
     try {
       setIsLoadingVideos(true)
-      const videosQuery = query(
-        collection(db, 'videos'),
-        where('playlistId', '==', playlist.id)
-      )
-      const videoDocs = await getDocs(videosQuery)
-      const videosData = videoDocs.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .sort((a, b) => (a.position || 0) - (b.position || 0))
+
+      // 1. Fetch video IDs from playlist subcollection
+      const itemsQuery = query(collection(db, 'playlists', playlist.id, 'items'))
+      const itemsSnapshot = await getDocs(itemsQuery)
+
+      if (itemsSnapshot.empty) {
+        setVideos([])
+        setIsLoadingVideos(false)
+        return
+      }
+
+      // 2. Fetch actual video documents
+      const videoPromises = itemsSnapshot.docs.map(async (itemDoc) => {
+        const itemData = itemDoc.data()
+        const videoDoc = await getDoc(doc(db, 'videos', itemDoc.id)) // itemId is videoId
+        if (videoDoc.exists()) {
+          return { id: videoDoc.id, ...videoDoc.data(), ...itemData }
+        }
+        return null
+      })
+
+      const videosData = (await Promise.all(videoPromises))
+        .filter(v => v !== null)
+        .sort((a, b) => (a.position || 0) - (b.position || 0)) // Fallback sort if not sorted in query
 
       setVideos(videosData)
     } catch (err) {

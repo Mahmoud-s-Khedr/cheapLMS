@@ -83,6 +83,8 @@ function PlaylistModal({ isOpen, initialData, onClose, onSubmit }) {
     );
 }
 
+import { Link } from "react-router-dom";
+
 export default function PlaylistsPage() {
     const [playlists, setPlaylists] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -172,7 +174,7 @@ export default function PlaylistsPage() {
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {playlists.map((playlist) => (
                         <div key={playlist.id} className="group overflow-hidden rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
-                            <div className="relative h-48 bg-slate-100">
+                            <Link to={`/playlists/${playlist.id}`} className="block relative h-48 bg-slate-100 cursor-pointer">
                                 {playlist.thumbnailUrl ? (
                                     <img
                                         src={playlist.thumbnailUrl}
@@ -184,26 +186,30 @@ export default function PlaylistsPage() {
                                         <ImageIcon className="h-12 w-12" />
                                     </div>
                                 )}
-                                <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => handleEdit(playlist)}
-                                        className="rounded-lg bg-white/90 p-2 text-slate-600 shadow-sm hover:text-blue-600 hover:bg-white transition-colors"
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(playlist.id)}
-                                        className="rounded-lg bg-white/90 p-2 text-slate-600 shadow-sm hover:text-red-600 hover:bg-white transition-colors"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
+                            </Link>
+
+                            <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleEdit(playlist); }}
+                                    className="rounded-lg bg-white/90 p-2 text-slate-600 shadow-sm hover:text-blue-600 hover:bg-white transition-colors"
+                                >
+                                    <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleDelete(playlist.id); }}
+                                    className="rounded-lg bg-white/90 p-2 text-slate-600 shadow-sm hover:text-red-600 hover:bg-white transition-colors"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
                             </div>
+
                             <div className="p-5">
-                                <h3 className="text-lg font-semibold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">{playlist.title}</h3>
-                                <p className="mt-1 text-sm text-slate-500 line-clamp-2 min-h-[2.5em]">
-                                    {playlist.description || "No description provided."}
-                                </p>
+                                <Link to={`/playlists/${playlist.id}`} className="block">
+                                    <h3 className="text-lg font-semibold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">{playlist.title}</h3>
+                                    <p className="mt-1 text-sm text-slate-500 line-clamp-2 min-h-[2.5em]">
+                                        {playlist.description || "No description provided."}
+                                    </p>
+                                </Link>
                                 <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between text-xs font-medium text-slate-400">
                                     <span className="bg-slate-50 px-2 py-1 rounded">{playlist.videoCount || 0} videos</span>
                                     <span>{playlist.updatedAt?.toDate?.().toLocaleDateString() || "Just now"}</span>

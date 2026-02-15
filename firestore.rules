@@ -23,11 +23,17 @@ service cloud.firestore {
     match /playlists/{playlistId} {
       allow read: if isAdmin() || (isAuth() && exists(/databases/$(database)/documents/playlistAccess/$(playlistId + '_' + request.auth.uid)));
       allow write: if isAdmin();
+      
+      // Subcollection for ordered videos in playlist
+      match /items/{itemId} {
+        allow read: if isAdmin() || (isAuth() && exists(/databases/$(database)/documents/playlistAccess/$(playlistId + '_' + request.auth.uid)));
+        allow write: if isAdmin();
+      }
     }
 
-    // videos collection: Accessible if user has access to parent playlist
+    // videos collection: Accessible if user is authenticated (simplified for independent video model)
     match /videos/{videoId} {
-      allow read: if isAdmin() || (isAuth() && exists(/databases/$(database)/documents/playlistAccess/$(resource.data.playlistId + '_' + request.auth.uid)));
+      allow read: if isAuth();
       allow write: if isAdmin();
     }
 

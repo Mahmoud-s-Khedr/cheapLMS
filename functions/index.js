@@ -13,3 +13,6 @@ exports.bootstrapAdmin = require('./api/bootstrapAdmin').bootstrapAdmin;
 exports.grantAccess = require('./api/grantAccess').grantAccess;
 exports.revokeAccess = require('./api/revokeAccess').revokeAccess;
 
+// Triggers
+exports.onVideoDelete = require('./triggers/onVideoDelete').onVideoDelete;
+

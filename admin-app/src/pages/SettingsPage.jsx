@@ -1,19 +1,38 @@
 import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Settings as SettingsIcon, Save, Info } from "lucide-react";
 
 const SEGMENT_OPTIONS = [2, 4, 6, 8, 10, 15, 20, 30, 60];
 
 export default function SettingsPage() {
     const [segmentDuration, setSegmentDuration] = useState(4);
+    const [encoders, setEncoders] = useState([]);
+    const [selectedEncoder, setSelectedEncoder] = useState("libx264");
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        const stored = localStorage.getItem("hlsSegmentDuration");
-        if (stored) setSegmentDuration(parseInt(stored, 10));
+        const storedDuration = localStorage.getItem("hlsSegmentDuration");
+        if (storedDuration) setSegmentDuration(parseInt(storedDuration, 10));
+
+        const storedEncoder = localStorage.getItem("ffmpegEncoder");
+        if (storedEncoder) setSelectedEncoder(storedEncoder);
+
+        // Fetch available encoders
+        invoke("get_ffmpeg_encoders")
+            .then(data => {
+                console.log("Available encoders:", data);
+                setEncoders(data);
+            })
+            .catch(err => {
+                console.error("Failed to get encoders:", err);
+                // Fallback
+                setEncoders([{ id: "libx264", name: "CPU (x264)" }]);
+            });
     }, []);
 
     const handleSave = () => {
         localStorage.setItem("hlsSegmentDuration", segmentDuration.toString());
+        localStorage.setItem("ffmpegEncoder", selectedEncoder);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
@@ -31,6 +50,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-slate-500 mb-6">Configure how videos are transcoded and segmented for streaming.</p>
 
                 <div className="space-y-4">
+                    {/* HLS Segment Duration */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
                             HLS Segment Duration
@@ -60,6 +80,28 @@ export default function SettingsPage() {
                                 <p className="text-slate-400">Default: 4 seconds. Applied to new video uploads only.</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Video Encoder Selection */}
+                    <div className="pt-4 border-t border-slate-100">
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Video Encoder (Hardware Acceleration)
+                        </label>
+                        <select
+                            value={selectedEncoder}
+                            onChange={(e) => setSelectedEncoder(e.target.value)}
+                            className="w-full max-w-xs p-2.5 bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block"
+                        >
+                            {encoders.map((enc) => (
+                                <option key={enc.id} value={enc.id}>
+                                    {enc.name}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="mt-2 text-xs text-slate-500">
+                            Select a hardware encoder (e.g., NVIDIA NVENC, Intel QuickSync) for faster processing.
+                            If processing fails, revert to CPU (x264).
+                        </p>
                     </div>
                 </div>
 

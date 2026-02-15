@@ -99,10 +99,9 @@ export default function UploadModal({ isOpen, onClose }) {
     };
 
     const handleUpload = () => {
-        if (!selectedPlaylist) {
-            alert("Please select a playlist");
-            return;
-        }
+        // Playlist is now optional
+        // if (!selectedPlaylist) { ... } 
+
         if (selectedFiles.length === 0) return;
         if (selectedQualities.length === 0) {
             alert("Please select at least one quality");
@@ -227,7 +226,7 @@ export default function UploadModal({ isOpen, onClose }) {
                     <div className="flex justify-end pt-4">
                         <button
                             onClick={handleUpload}
-                            disabled={selectedFiles.length === 0 || !selectedPlaylist}
+                            disabled={selectedFiles.length === 0}
                             className="rounded-md bg-blue-600 px-6 py-2 text-white font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Add {selectedFiles.length} Videos to Queue

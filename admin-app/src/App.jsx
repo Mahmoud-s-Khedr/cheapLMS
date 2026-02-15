@@ -6,7 +6,9 @@ import DashboardLayout from "./components/DashboardLayout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import PlaylistsPage from "./pages/PlaylistsPage";
+import PlaylistDetailsPage from "./pages/PlaylistDetailsPage";
 import QueuePage from "./pages/QueuePage";
+import VideosPage from "./pages/VideosPage";
 import UsersPage from "./pages/UsersPage";
 import SettingsPage from "./pages/SettingsPage";
 
@@ -23,6 +25,8 @@ function App() {
               <Route element={<DashboardLayout />}>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/playlists" element={<PlaylistsPage />} />
+                <Route path="/playlists/:id" element={<PlaylistDetailsPage />} />
+                <Route path="/videos" element={<VideosPage />} />
                 <Route path="/queue" element={<QueuePage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
