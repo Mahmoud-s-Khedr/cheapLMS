@@ -37,7 +37,7 @@ function getFolderPrefixForPath(videoPath) {
 export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
-        const key = url.pathname.slice(1); // Remove leading slash
+        const key = decodeURIComponent(url.pathname.slice(1)); // Remove leading slash + decode %20 etc.
 
         const allowedOrigin = getAllowedOrigin(request, env);
 
@@ -69,6 +69,23 @@ export default {
             if (allowedOrigin) {
                 headers.set('Access-Control-Allow-Origin', allowedOrigin);
             }
+            return new Response(object.body, { headers });
+        }
+
+        // 2b. Serve multimedia files publicly (no auth required)
+        if (key.startsWith('multimedia/')) {
+            if (request.method !== 'GET' && request.method !== 'HEAD') {
+                return new Response('Method Not Allowed', { status: 405 });
+            }
+            const object = await env.R2_BUCKET.get(key);
+            if (object === null) {
+                return new Response('Object Not Found', { status: 404 });
+            }
+            const headers = new Headers();
+            object.writeHttpMetadata(headers);
+            headers.set('etag', object.httpEtag);
+            headers.set('Cache-Control', 'public, max-age=3600');
+            headers.set('Access-Control-Allow-Origin', allowedOrigin || '*');
             return new Response(object.body, { headers });
         }
 

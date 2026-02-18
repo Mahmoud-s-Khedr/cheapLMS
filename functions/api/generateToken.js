@@ -28,18 +28,26 @@ exports.generateToken = onCall({ region: 'europe-west1' }, async (request) => {
         }
 
         const videoData = videoSnap.data();
-        const playlistId = videoData.playlistId;
 
-        // 3. Authorization Check: Does user have access to this playlist?
+        // Support both playlistIds (array) and legacy playlistId (string)
+        const playlistIds = videoData.playlistIds || (videoData.playlistId ? [videoData.playlistId] : []);
+
+        // 3. Authorization Check: Does user have access to ANY playlist this video belongs to?
         // Skip check if user is admin
         const userSnap = await db.collection('users').doc(userId).get();
         const isAdmin = userSnap.data()?.role === 'admin';
 
         if (!isAdmin) {
-            const accessId = `${playlistId}_${userId}`;
-            const accessSnap = await db.collection('playlistAccess').doc(accessId).get();
-
-            if (!accessSnap.exists) {
+            let hasAccess = false;
+            for (const plId of playlistIds) {
+                const accessId = `${plId}_${userId}`;
+                const accessSnap = await db.collection('playlistAccess').doc(accessId).get();
+                if (accessSnap.exists) {
+                    hasAccess = true;
+                    break;
+                }
+            }
+            if (!hasAccess) {
                 throw new HttpsError('permission-denied', 'You do not have access to this content.');
             }
         }
