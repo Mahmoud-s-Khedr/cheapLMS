@@ -129,24 +129,24 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors">
       <Navigation onLogout={logout} />
 
       {/* Dashboard Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm font-medium">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-800 dark:text-red-300 text-sm font-medium">{error}</p>
           </div>
         )}
 
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Welcome back, {user?.displayName?.split(' ')[0]}! 👋
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             {playlists.length === 0
               ? "You don't have access to any courses yet. Ask your admin for access."
               : `You have access to ${playlists.length} course${playlists.length !== 1 ? 's' : ''}`}
@@ -158,13 +158,13 @@ export default function DashboardPage() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
-              <p className="mt-4 text-gray-600">Loading courses...</p>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading courses...</p>
             </div>
           </div>
         ) : playlists.length === 0 ? (
-          <div className="bg-white rounded-lg p-12 text-center shadow-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-12 text-center shadow-sm dark:border dark:border-slate-700">
             <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
+              className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -176,8 +176,8 @@ export default function DashboardPage() {
                 d="M12 6.253v13m0-13C6.5 6.253 2 10.771 2 16.5S6.5 26.747 12 26.747s10-4.518 10-10.247S17.5 6.253 12 6.253z"
               />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900">No courses available</h3>
-            <p className="text-gray-600 mt-2">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">No courses available</h3>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Contact your administrator to get access to courses.
             </p>
           </div>

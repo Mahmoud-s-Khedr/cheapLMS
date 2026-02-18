@@ -20,19 +20,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-50 to-blue-50">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8 dark:border dark:border-slate-700">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">cheapLMS</h1>
-            <p className="text-gray-600">Video Learning Platform</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">cheapLMS</h1>
+            <p className="text-gray-600 dark:text-gray-400">Video Learning Platform</p>
           </div>
 
           {/* Error Message */}
           {(error || authError) && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm font-medium">
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-800 dark:text-red-300 text-sm font-medium">
                 {error || authError}
               </p>
             </div>
@@ -42,7 +42,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={isSigningIn || isLoading}
-            className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3"
+            className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3"
           >
             {isSigningIn || isLoading ? (
               <>
@@ -60,7 +60,7 @@ export default function LoginPage() {
           </button>
 
           {/* Footer Text */}
-          <p className="text-center text-gray-500 text-sm mt-6">
+          <p className="text-center text-gray-500 dark:text-gray-400 text-sm mt-6">
             By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

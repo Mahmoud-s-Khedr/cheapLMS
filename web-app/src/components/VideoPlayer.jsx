@@ -27,13 +27,30 @@ export default function VideoPlayer({ videoPath, token, videoTitle }) {
 
       // Check if browser supports HLS.js
       if (Hls.isSupported()) {
+        let recoverMediaAttempts = 0;
+        let recoverNetworkAttempts = 0;
+
         const hls = new Hls({
           debug: false,
           enableWorker: true,
           lowLatencyMode: false,
-          backBufferLength: 60,
-          maxBufferLength: 120,
-          maxMaxBufferLength: 120,
+          // Start playback faster — don't wait for huge buffers
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          maxBufferSize: 30 * 1000 * 1000, // 30 MB
+          backBufferLength: 30,
+          // Let ABR pick the best starting quality for the connection
+          startLevel: -1,
+          // Don't load a higher resolution than the player element size
+          capLevelToPlayerSize: true,
+          // Generous timeouts for slow connections (20s segments need time)
+          fragLoadingTimeOut: 30000,
+          fragLoadingMaxRetry: 4,
+          fragLoadingRetryDelay: 2000,
+          manifestLoadingTimeOut: 15000,
+          manifestLoadingMaxRetry: 3,
+          levelLoadingTimeOut: 15000,
+          levelLoadingMaxRetry: 3,
           xhrSetup: function (xhr, url) {
             xhr.withCredentials = true
           },
@@ -58,20 +75,34 @@ export default function VideoPlayer({ videoPath, token, videoTitle }) {
           setIsLoading(false)
         })
 
-        // Handle errors
+        // Handle errors with auto-recovery
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
-                setError('Network error. Please check your connection.')
+                if (recoverNetworkAttempts < 3) {
+                  recoverNetworkAttempts++
+                  console.warn(`Network error, attempting recovery (${recoverNetworkAttempts}/3)...`)
+                  hls.startLoad()
+                } else {
+                  setError('Network error. Please check your connection and try again.')
+                  setIsLoading(false)
+                }
                 break
               case Hls.ErrorTypes.MEDIA_ERROR:
-                setError('Error playing video. Please try again.')
+                if (recoverMediaAttempts < 3) {
+                  recoverMediaAttempts++
+                  console.warn(`Media error, attempting recovery (${recoverMediaAttempts}/3)...`)
+                  hls.recoverMediaError()
+                } else {
+                  setError('Error playing video. Please try refreshing.')
+                  setIsLoading(false)
+                }
                 break
               default:
                 setError('An error occurred while loading the video.')
+                setIsLoading(false)
             }
-            setIsLoading(false)
           }
         })
 

@@ -3,15 +3,15 @@ import React from 'react'
 export default function VideoList({ videos, selectedPlaylist, onVideoSelect, isLoading, onBack }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl">
+      <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl dark:border dark:border-slate-700">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             {selectedPlaylist?.title}
           </h2>
           <button
             onClick={onBack}
-            className="text-gray-500 hover:text-gray-700 transition-colors p-1"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-1"
             aria-label="Close"
           >
             <svg
@@ -38,7 +38,7 @@ export default function VideoList({ videos, selectedPlaylist, onVideoSelect, isL
             </div>
           ) : videos.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">No videos in this course yet</p>
+              <p className="text-gray-500 dark:text-gray-400">No videos in this course yet</p>
             </div>
           ) : (
             <ul className="space-y-2">
@@ -46,7 +46,7 @@ export default function VideoList({ videos, selectedPlaylist, onVideoSelect, isL
                 <li key={video.id}>
                   <button
                     onClick={() => onVideoSelect(video)}
-                    className="w-full text-left p-4 rounded-lg bg-gray-50 hover:bg-primary-50 transition-colors group"
+                    className="w-full text-left p-4 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-primary-50 dark:hover:bg-slate-700 transition-colors group"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0">
@@ -68,11 +68,11 @@ export default function VideoList({ videos, selectedPlaylist, onVideoSelect, isL
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 group-hover:text-primary-700 transition-colors">
+                        <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">
                           {video.title}
                         </h3>
                         {video.durationSeconds && (
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             {Math.floor(video.durationSeconds / 60)} minutes
                           </p>
                         )}

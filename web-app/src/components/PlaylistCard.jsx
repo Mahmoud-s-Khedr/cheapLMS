@@ -5,7 +5,7 @@ export default function PlaylistCard({ playlist, onClick, isLoading }) {
     <button
       onClick={onClick}
       disabled={isLoading}
-      className="group relative bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden text-left h-full"
+      className="group relative bg-white dark:bg-slate-800 rounded-lg shadow-sm hover:shadow-lg dark:border dark:border-slate-700 transition-all duration-300 overflow-hidden text-left h-full"
     >
       {/* Thumbnail Container */}
       <div className="relative bg-gradient-to-br from-primary-100 to-primary-50 h-40 overflow-hidden">
@@ -47,10 +47,10 @@ export default function PlaylistCard({ playlist, onClick, isLoading }) {
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-primary-600 transition-colors">
+        <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 transition-colors">
           {playlist.title}
         </h3>
-        <p className="text-gray-600 text-sm mt-2 line-clamp-2">
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-2 line-clamp-2">
           {playlist.description || 'No description'}
         </p>
 
@@ -75,7 +75,7 @@ export default function PlaylistCard({ playlist, onClick, isLoading }) {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white bg-opacity-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-white dark:bg-slate-800 bg-opacity-50 dark:bg-opacity-50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
         </div>
       )}
