@@ -245,6 +245,71 @@ Possible but more fragile than a native Windows build. Use this only if you cann
 
 ---
 
+## Updating After Initial Deployment
+
+Once everything is deployed, use the steps below to push changes to each component.
+
+### Update Cloud Functions
+```bash
+# Deploy all functions
+npx firebase deploy --only functions
+
+# Deploy a single function (faster)
+npx firebase deploy --only functions:bulkGrantAccess
+```
+> **Tip:** Functions are deployed to `europe-west1`. If you add a new function, export it in `functions/index.js` first.
+
+### Update Firestore Rules
+```bash
+npx firebase deploy --only firestore:rules
+```
+
+### Update Cloudflare Worker
+```bash
+cd securestream-worker
+npm run deploy
+```
+> If you changed `wrangler.toml` bindings or secrets, redeploy even if the JS code hasn't changed.
+
+### Update Web App
+```bash
+cd web-app
+npm run build
+npx firebase deploy --only hosting
+```
+> To preview before deploying: `npm run preview` → visit `http://localhost:4173`.
+
+### Update Admin App
+```bash
+cd admin-app
+npm run tauri build
+```
+Distribute the new binary from `src-tauri/target/release/bundle/`.
+
+> For dev testing only: `npm run dev` (no rebuild needed).
+
+### Update Everything at Once
+```bash
+# Backend (functions + rules)
+npx firebase deploy --only firestore,functions
+
+# Frontend
+cd web-app && npm run build && cd ..
+npx firebase deploy --only hosting
+
+# Worker
+cd securestream-worker && npm run deploy && cd ..
+```
+
+### Environment Variable Changes
+If you update `.env.local` values:
+- **Web App:** Rebuild and redeploy hosting (`npm run build` + `firebase deploy --only hosting`)
+- **Admin App:** Rebuild the desktop binary (`npm run tauri build`)
+- **Cloud Functions:** Env vars are in function code, so redeploy functions
+- **Worker:** Update `wrangler.toml` `[vars]` and redeploy
+
+---
+
 ## Complete Deployment Checklist
 
 ### Phase 1: Infrastructure (R2 + Worker)
