@@ -78,5 +78,39 @@ export const UserService = {
             console.error("Error revoking access:", error);
             throw error;
         }
+    },
+
+    // Get all users who have access to a specific playlist
+    getPlaylistAccess: async (playlistId) => {
+        try {
+            const q = query(
+                collection(db, PLAYLIST_ACCESS_COLLECTION),
+                where("playlistId", "==", playlistId)
+            );
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+        } catch (error) {
+            console.error("Error fetching playlist access:", error);
+            throw error;
+        }
+    },
+
+    // Bulk revoke access for multiple users at once
+    bulkRevokeAccess: async (playlistId, userIds) => {
+        try {
+            const { writeBatch } = await import("firebase/firestore");
+            const batch = writeBatch(db);
+            for (const userId of userIds) {
+                const accessId = `${playlistId}_${userId}`;
+                batch.delete(doc(db, PLAYLIST_ACCESS_COLLECTION, accessId));
+            }
+            await batch.commit();
+        } catch (error) {
+            console.error("Error bulk revoking access:", error);
+            throw error;
+        }
     }
 };

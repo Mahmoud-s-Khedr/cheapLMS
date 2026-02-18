@@ -1,9 +1,51 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { v4 as uuidv4 } from "uuid";
 import { VideoService } from "../services/VideoService";
 
 const VideoQueueContext = createContext();
+
+// --- Resilience helpers ---
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 2000;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function retryWithBackoff(fn, { maxRetries = MAX_RETRIES, label = "operation" } = {}) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            lastError = err;
+            if (attempt < maxRetries) {
+                const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+                console.warn(`[retry] ${label} attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`, err?.message || err);
+                await sleep(delay);
+            }
+        }
+    }
+    throw lastError;
+}
+
+// Checkpoint helpers — persists processing state to survive crashes
+function setCheckpoint(itemId, key, value) {
+    const checkpoints = JSON.parse(localStorage.getItem("processingCheckpoints") || "{}");
+    if (!checkpoints[itemId]) checkpoints[itemId] = {};
+    checkpoints[itemId][key] = value;
+    localStorage.setItem("processingCheckpoints", JSON.stringify(checkpoints));
+}
+
+function getCheckpoint(itemId, key) {
+    const checkpoints = JSON.parse(localStorage.getItem("processingCheckpoints") || "{}");
+    return checkpoints[itemId]?.[key] ?? null;
+}
+
+function clearCheckpoints(itemId) {
+    const checkpoints = JSON.parse(localStorage.getItem("processingCheckpoints") || "{}");
+    delete checkpoints[itemId];
+    localStorage.setItem("processingCheckpoints", JSON.stringify(checkpoints));
+}
 
 const getErrorMessage = (error) => {
     if (!error) return "Unknown error";
@@ -53,12 +95,31 @@ export function VideoQueueProvider({ children }) {
     const [queue, setQueue] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Load queue from local storage on mount
+    // Load queue from local storage on mount + crash recovery
     useEffect(() => {
         const savedQueue = localStorage.getItem("videoQueue");
         if (savedQueue) {
             try {
-                setQueue(JSON.parse(savedQueue));
+                let parsed = JSON.parse(savedQueue);
+                // Crash recovery: reset stuck items back to queued
+                let recovered = 0;
+                parsed = parsed.map(item => {
+                    if (item.status === "processing" || item.status === "uploading") {
+                        recovered++;
+                        return {
+                            ...item,
+                            status: "queued",
+                            progress: 0,
+                            error: null,
+                            retryCount: (item.retryCount || 0) + 1,
+                        };
+                    }
+                    return item;
+                });
+                if (recovered > 0) {
+                    console.warn(`[crash-recovery] Reset ${recovered} stuck item(s) to queued.`);
+                }
+                setQueue(parsed);
             } catch (e) {
                 console.error("Failed to parse videoQueue:", e);
             }
@@ -129,21 +190,59 @@ export function VideoQueueProvider({ children }) {
                 throw new Error("File path not found.");
             }
 
-            // 2. Transcode
             const { join, tempDir } = await import("@tauri-apps/api/path");
             const outputDir = await join(await tempDir(), "cheaplms_processing", item.id);
-            console.log("Transcoding to:", outputDir);
 
-            await invoke("process_video", {
-                config: {
-                    id: item.id,
-                    input_path: item.path,
-                    output_dir: outputDir,
-                    qualities: item.qualities || ["720p"],
-                    segment_duration: parseInt(localStorage.getItem("hlsSegmentDuration") || "4", 10),
-                    encoder: localStorage.getItem("ffmpegEncoder") || "libx264"
+            // Check if transcoding was already completed (checkpoint)
+            const transcodingDone = getCheckpoint(item.id, "transcoding_complete");
+            if (transcodingDone) {
+                console.log(`[checkpoint] Transcoding already complete for ${item.id}, skipping to upload.`);
+            } else {
+                // 2. Transcode
+                console.log("Transcoding to:", outputDir);
+                await invoke("process_video", {
+                    config: {
+                        id: item.id,
+                        input_path: item.path,
+                        output_dir: outputDir,
+                        qualities: item.qualities || ["720p"],
+                        segment_duration: parseInt(localStorage.getItem("hlsSegmentDuration") || "4", 10),
+                        encoder: localStorage.getItem("ffmpegEncoder") || "libx264"
+                    }
+                });
+
+                // Validate output before proceeding
+                const { readDir } = await import("@tauri-apps/plugin-fs");
+                try {
+                    const outputFiles = await readDir(outputDir);
+                    const hasM3U8 = outputFiles.some(f => f.name?.endsWith(".m3u8"));
+                    const hasTsSegments = outputFiles.some(f => f.name?.endsWith(".ts"));
+                    if (!hasM3U8 && !hasTsSegments) {
+                        // Check subdirectories too
+                        let foundHLS = false;
+                        for (const entry of outputFiles) {
+                            if (entry.isDirectory) {
+                                const subDirPath = await join(outputDir, entry.name);
+                                const subFiles = await readDir(subDirPath);
+                                if (subFiles.some(f => f.name?.endsWith(".m3u8") || f.name?.endsWith(".ts"))) {
+                                    foundHLS = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!foundHLS) {
+                            throw new Error("Transcoding produced no valid HLS output (.m3u8 / .ts files missing).");
+                        }
+                    }
+                } catch (validateErr) {
+                    if (validateErr.message.includes("Transcoding produced no valid")) throw validateErr;
+                    console.warn("Output validation skipped:", validateErr);
                 }
-            });
+
+                // Save checkpoint — transcoding is done
+                setCheckpoint(item.id, "transcoding_complete", true);
+                setCheckpoint(item.id, "output_dir", outputDir);
+            }
 
             updateItemStatus(item.id, "uploading", 0);
 
@@ -152,7 +251,6 @@ export function VideoQueueProvider({ children }) {
             if (item.thumbnailPath) {
                 thumbnailLocalPath = item.thumbnailPath;
             } else {
-                // Auto-generate thumbnail from video
                 thumbnailLocalPath = await join(outputDir, "thumbnail.jpg");
                 try {
                     await invoke("generate_thumbnail", {
@@ -166,32 +264,37 @@ export function VideoQueueProvider({ children }) {
                 }
             }
 
-            // 4. Upload to R2
+            // 4. Upload to R2 (with retry)
             console.log("Uploading from:", outputDir);
             const r2BasePath = await uploadToR2(item.id, outputDir, item.playlistId);
 
-            // 5. Upload thumbnail to R2
+            // 5. Upload thumbnail to R2 (with retry)
             let thumbnailUrl = null;
             if (thumbnailLocalPath) {
                 try {
-                    thumbnailUrl = await uploadThumbnail(item.id, thumbnailLocalPath);
+                    thumbnailUrl = await retryWithBackoff(
+                        () => uploadThumbnail(item.id, thumbnailLocalPath),
+                        { maxRetries: 2, label: `thumbnail-${item.id}` }
+                    );
                     console.log("Thumbnail uploaded:", thumbnailUrl);
                 } catch (thumbUploadErr) {
-                    console.warn("Thumbnail upload failed, continuing without:", thumbUploadErr);
+                    console.warn("Thumbnail upload failed after retries, continuing without:", thumbUploadErr);
                 }
             }
 
             // 6. Save to Firestore
             await VideoService.create({
-                id: item.id, // Use the same UUID for Firestore as R2
+                id: item.id,
                 title: item.name,
                 playlistId: item.playlistId,
                 status: "ready",
                 processedAt: new Date(),
-                r2Path: r2BasePath, // Store the path for the player
-                thumbnailUrl // null if thumbnail failed
+                r2Path: r2BasePath,
+                thumbnailUrl
             });
 
+            // Clean up checkpoints on success
+            clearCheckpoints(item.id);
             updateItemStatus(item.id, "completed", 100);
         } catch (error) {
             console.error("Processing failed:", error);
@@ -316,26 +419,50 @@ export function VideoQueueProvider({ children }) {
                     await upload.done();
                     uploadedFiles++;
                     console.log(`Uploaded ${file.name}`);
-                } catch (uploadErr) {
-                    const category = classifyUploadError(uploadErr);
-                    const diagnosticError = formatUploadFailure({
-                        fileName: file.name,
-                        r2Key,
-                        appOrigin,
-                        endpointHost,
-                        category,
-                        error: uploadErr,
-                    });
+                } catch (singleUploadErr) {
+                    // Retry individual file upload with exponential backoff
+                    console.warn(`[retry] Upload of ${file.name} failed, attempting retries...`);
+                    try {
+                        await retryWithBackoff(async () => {
+                            const retryUpload = new Upload({
+                                client: r2Client,
+                                params: {
+                                    Bucket: R2_BUCKET_NAME,
+                                    Key: r2Key,
+                                    Body: fileContent,
+                                    ContentType: contentType,
+                                },
+                            });
+                            retryUpload.on("httpUploadProgress", (progress) => {
+                                const fileProgress = (progress.loaded / progress.total) * 100;
+                                const totalProgress = ((uploadedFiles + (fileProgress / 100)) / totalFiles) * 100;
+                                updateItemStatus(itemId, "uploading", Math.round(totalProgress));
+                            });
+                            await retryUpload.done();
+                        }, { label: `upload-${file.name}` });
+                        uploadedFiles++;
+                        console.log(`Uploaded ${file.name} (after retry)`);
+                    } catch (retryErr) {
+                        const category = classifyUploadError(retryErr);
+                        const diagnosticError = formatUploadFailure({
+                            fileName: file.name,
+                            r2Key,
+                            appOrigin,
+                            endpointHost,
+                            category,
+                            error: retryErr,
+                        });
 
-                    console.error(`Failed to upload ${file.name} to R2:`, {
-                        category,
-                        appOrigin,
-                        endpointHost,
-                        r2Key,
-                        errorMessage: getErrorMessage(uploadErr),
-                    });
+                        console.error(`Failed to upload ${file.name} to R2 after retries:`, {
+                            category,
+                            appOrigin,
+                            endpointHost,
+                            r2Key,
+                            errorMessage: getErrorMessage(retryErr),
+                        });
 
-                    throw new Error(diagnosticError);
+                        throw new Error(diagnosticError);
+                    }
                 }
             }
 
@@ -391,8 +518,18 @@ export function VideoQueueProvider({ children }) {
     };
 
     const removeFromQueue = (id) => {
+        clearCheckpoints(id);
         setQueue(prev => prev.filter(item => item.id !== id));
     };
+
+    // Retry a failed item — resets status to queued
+    const retryItem = useCallback((id) => {
+        setQueue(prev => prev.map(item =>
+            item.id === id && item.status === "error"
+                ? { ...item, status: "queued", progress: 0, error: null, retryCount: (item.retryCount || 0) + 1 }
+                : item
+        ));
+    }, []);
 
     const deleteVideo = async (videoId) => {
         try {
@@ -484,6 +621,7 @@ export function VideoQueueProvider({ children }) {
         queue,
         addToQueue,
         removeFromQueue,
+        retryItem,
         isProcessing,
         deleteVideo
     };

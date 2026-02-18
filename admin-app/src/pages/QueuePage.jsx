@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useVideoQueue } from "../context/VideoQueueContext";
-import { Upload, Play, Pause, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Upload, Play, Pause, Trash2, CheckCircle, XCircle, RotateCw } from "lucide-react";
 import UploadModal from "../components/UploadModal";
 
 export default function QueuePage() {
-    const { queue, removeFromQueue } = useVideoQueue();
+    const { queue, removeFromQueue, retryItem } = useVideoQueue();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
     // Helper for status colors
@@ -58,6 +58,11 @@ export default function QueuePage() {
                                         <span className={`text-xs font-medium uppercase ${getStatusColor(item.status)}`}>
                                             {item.status}
                                         </span>
+                                        {item.retryCount > 0 && (
+                                            <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">
+                                                retry #{item.retryCount}
+                                            </span>
+                                        )}
                                         {item.error && (
                                             <span className="text-xs text-red-500 truncate mr-2" title={item.error}>
                                                 - {item.error}
@@ -76,6 +81,15 @@ export default function QueuePage() {
                                 </div>
 
                                 <div className="flex items-center gap-2">
+                                    {item.status === 'error' && (
+                                        <button
+                                            onClick={() => retryItem(item.id)}
+                                            className="p-2 text-yellow-500 hover:text-yellow-700"
+                                            title="Retry"
+                                        >
+                                            <RotateCw className="h-5 w-5" />
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => removeFromQueue(item.id)}
                                         className="p-2 text-gray-400 hover:text-red-600"

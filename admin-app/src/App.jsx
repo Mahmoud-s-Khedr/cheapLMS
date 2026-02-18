@@ -11,6 +11,7 @@ import QueuePage from "./pages/QueuePage";
 import VideosPage from "./pages/VideosPage";
 import UsersPage from "./pages/UsersPage";
 import SettingsPage from "./pages/SettingsPage";
+import MultimediaPage from "./pages/MultimediaPage";
 
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
                 <Route path="/videos" element={<VideosPage />} />
                 <Route path="/queue" element={<QueuePage />} />
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/multimedia" element={<MultimediaPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
