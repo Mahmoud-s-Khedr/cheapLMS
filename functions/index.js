@@ -19,4 +19,8 @@ exports.deleteMultimedia = require('./api/deleteMultimedia').deleteMultimedia;
 
 // Triggers
 exports.onVideoDelete = require('./triggers/onVideoDelete').onVideoDelete;
-
+exports.onCommentCreate = require('./triggers/onCommentCreate').onCommentCreate;
+exports.onAccessGranted = require('./triggers/onAccessGranted').onAccessGranted;
+exports.onVideoAddedToPlaylist = require('./triggers/onVideoAddedToPlaylist').onVideoAddedToPlaylist;
+exports.onMultimediaCreated = require('./triggers/onMultimediaCreated').onMultimediaCreated;
+exports.onNotificationCreate = require('./triggers/onNotificationCreate').onNotificationCreate;

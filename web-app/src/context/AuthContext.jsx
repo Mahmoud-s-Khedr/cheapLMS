@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { auth, db } from '../lib/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore'
+import { messaging } from '../lib/firebase'
+import { getToken } from 'firebase/messaging'
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -26,6 +28,27 @@ export const AuthProvider = ({ children }) => {
           } else {
             setUserRole('student')
           }
+
+          // Try to set up notifications
+          try {
+            const msg = await messaging();
+            if (msg) {
+              const permission = await Notification.requestPermission();
+              if (permission === 'granted') {
+                const token = await getToken(msg, {
+                  vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY
+                });
+                if (token) {
+                  await updateDoc(doc(db, 'users', currentUser.uid), {
+                    fcmTokens: arrayUnion(token)
+                  });
+                }
+              }
+            }
+          } catch (notifErr) {
+            console.error('Failed to set up notifications:', notifErr);
+          }
+
         } catch (err) {
           console.error('Error fetching user role:', err)
           setUserRole('student')

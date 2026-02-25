@@ -7,6 +7,7 @@ import { useVideoToken } from '../hooks/useVideoToken'
 import VideoPlayer from '../components/VideoPlayer'
 import MultimediaSection from '../components/MultimediaSection'
 import Navigation from '../components/Navigation'
+import CommentSection from '../components/CommentSection'
 
 export default function PlayerPage() {
   const { videoId } = useParams()
@@ -161,6 +162,9 @@ export default function PlayerPage() {
 
             {/* Multimedia Section */}
             <MultimediaSection videoId={videoId} />
+
+            {/* Comments Section */}
+            <CommentSection videoId={videoId} />
           </div>
         )}
       </div>

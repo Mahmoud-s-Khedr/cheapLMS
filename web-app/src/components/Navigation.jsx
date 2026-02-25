@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import NotificationsDropdown from './NotificationsDropdown'
 
 export default function Navigation({ onLogout }) {
   const { user, isAdmin } = useAuth()
@@ -29,6 +30,9 @@ export default function Navigation({ onLogout }) {
 
           {/* Right Side */}
           <div className="flex items-center gap-3">
+            {/* Notifications */}
+            {user && <NotificationsDropdown />}
+
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleTheme}

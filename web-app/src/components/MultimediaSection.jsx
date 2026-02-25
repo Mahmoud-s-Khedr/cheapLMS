@@ -70,17 +70,31 @@ export default function MultimediaSection({ videoId }) {
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                         🎙️ Voice Notes
                     </h3>
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {voicenotes.map(item => (
-                            <div key={item.id} className="flex items-center gap-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.fileName}</p>
+                            <div key={item.id} className="flex flex-col gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0 pr-4">
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{item.title}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{item.fileName}</p>
+                                    </div>
+                                    <a
+                                        href={getFileUrl(item.fileUrl)}
+                                        download={item.fileName}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-700 transition-colors shrink-0"
+                                        title="Download Voice Note"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                    </a>
                                 </div>
                                 <audio
                                     controls
                                     crossOrigin="anonymous"
-                                    className="flex-shrink-0 h-8"
+                                    className="w-full h-10"
                                     preload="metadata"
                                 >
                                     <source src={getFileUrl(item.fileUrl)} type={item.mimeType || 'audio/mpeg'} />
@@ -127,26 +141,40 @@ export default function MultimediaSection({ videoId }) {
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                         📄 Documents
                     </h3>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {pdfs.map(item => (
-                            <a
-                                key={item.id}
-                                href={getFileUrl(item.fileUrl)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                            >
-                                <svg className="w-8 h-8 text-red-500 dark:text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
-                                </svg>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.fileName}</p>
+                            <div key={item.id} className="flex flex-col p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm hover:shadow-md transition-shadow group">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-300">
+                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                                        </svg>
+                                    </div>
+                                    <a
+                                        href={getFileUrl(item.fileUrl)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-2 bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                        title="Download Document"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                    </a>
                                 </div>
-                                <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                </svg>
-                            </a>
+                                <div className="flex-1">
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2">{item.title}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate" title={item.fileName}>{item.fileName}</p>
+                                </div>
+                                <a
+                                    href={getFileUrl(item.fileUrl)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-4 w-full text-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                >
+                                    Open Document
+                                </a>
+                            </div>
                         ))}
                     </div>
                 </div>

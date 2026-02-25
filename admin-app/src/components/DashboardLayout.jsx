@@ -1,6 +1,7 @@
 import { useAuth } from "../context/AuthContext";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, ListVideo, Upload, Users, Settings, LogOut, Film, FileAudio } from "lucide-react";
+import AdminNotificationsDropdown from "./AdminNotificationsDropdown";
 
 export default function DashboardLayout() {
     const { logout, user } = useAuth();
@@ -101,6 +102,9 @@ export default function DashboardLayout() {
                     <h2 className="text-xl font-semibold text-slate-800">
                         {getPageTitle(location.pathname)}
                     </h2>
+                    <div className="flex items-center gap-4">
+                        <AdminNotificationsDropdown />
+                    </div>
                 </header>
                 <main className="p-8">
                     <Outlet />

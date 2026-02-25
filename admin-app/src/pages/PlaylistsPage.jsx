@@ -4,6 +4,8 @@ import { Plus, Edit, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../config/firebase";
 
 // Schema for Playlist Form
 const playlistSchema = z.object({
@@ -27,13 +29,34 @@ function PlaylistModal({ isOpen, initialData, onClose, onSubmit }) {
         },
     });
 
+    const [coverFile, setCoverFile] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+
+    const handleFormSubmit = async (data) => {
+        try {
+            if (coverFile) {
+                setUploadingImage(true);
+                const fileRef = ref(storage, `playlists/${Date.now()}_${coverFile.name}`);
+                await uploadBytes(fileRef, coverFile);
+                const url = await getDownloadURL(fileRef);
+                data.thumbnailUrl = url;
+            }
+            await onSubmit(data);
+        } catch (error) {
+            console.error("Error uploading cover:", error);
+            alert("Failed to upload cover image.");
+        } finally {
+            setUploadingImage(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
                 <h2 className="text-xl font-bold mb-4">{isEdit ? "Edit Playlist" : "Create Playlist"}</h2>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Title</label>
                         <input
@@ -52,13 +75,25 @@ function PlaylistModal({ isOpen, initialData, onClose, onSubmit }) {
                         {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Thumbnail URL (Optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Playlist Cover (Optional)</label>
                         <input
-                            {...register("thumbnailUrl")}
-                            placeholder="https://example.com/image.jpg"
-                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    setCoverFile(e.target.files[0]);
+                                }
+                            }}
+                            className="block w-full text-sm text-slate-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100"
                         />
-                        {errors.thumbnailUrl && <p className="text-red-500 text-xs mt-1">{errors.thumbnailUrl.message}</p>}
+                        {initialData?.thumbnailUrl && !coverFile && (
+                            <p className="text-xs text-gray-500 mt-2">Current cover will be kept if no new file is selected.</p>
+                        )}
                     </div>
 
                     <div className="flex justify-end space-x-3 pt-4">
@@ -71,10 +106,10 @@ function PlaylistModal({ isOpen, initialData, onClose, onSubmit }) {
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || uploadingImage}
                             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (isEdit ? "Update" : "Create")}
+                            {(isSubmitting || uploadingImage) ? <Loader2 className="w-4 h-4 animate-spin" /> : (isEdit ? "Update" : "Create")}
                         </button>
                     </div>
                 </form>
@@ -173,7 +208,7 @@ export default function PlaylistsPage() {
             ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {playlists.map((playlist) => (
-                        <div key={playlist.id} className="group overflow-hidden rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
+                        <div key={playlist.id} className="group relative overflow-hidden rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200">
                             <Link to={`/playlists/${playlist.id}`} className="block relative h-48 bg-slate-100 cursor-pointer">
                                 {playlist.thumbnailUrl ? (
                                     <img

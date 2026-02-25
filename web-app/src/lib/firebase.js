@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getFunctions } from 'firebase/functions'
+import { getMessaging, isSupported } from 'firebase/messaging'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,7 +23,12 @@ export const auth = getAuth(app)
 export const db = getFirestore(app)
 
 // Initialize Cloud Functions
-// Initialize Cloud Functions
 export const functions = getFunctions(app, 'europe-west1')
+
+// Initialize Firebase Cloud Messaging (if supported by the browser)
+export const messaging = async () => {
+  const supported = await isSupported();
+  return supported ? getMessaging(app) : null;
+};
 
 export default app

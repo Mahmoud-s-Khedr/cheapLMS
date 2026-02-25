@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DashboardService } from "../services/DashboardService";
-import { Video, Users, HardDrive, Loader2 } from "lucide-react";
+import { Video, Users, HardDrive, Loader2, Bell } from "lucide-react";
+import SendNotificationModal from "../components/SendNotificationModal";
 
 export default function DashboardPage() {
     const [stats, setStats] = useState({
@@ -10,6 +11,7 @@ export default function DashboardPage() {
         storageUsed: "0 GB"
     });
     const [loading, setLoading] = useState(true);
+    const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
 
     useEffect(() => {
         loadStats();
@@ -36,9 +38,18 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
-                <p className="text-slate-500">Welcome back to the admin console.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
+                    <p className="text-slate-500">Welcome back to the admin console.</p>
+                </div>
+                <button
+                    onClick={() => setIsNotificationModalOpen(true)}
+                    className="flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 shadow-sm"
+                >
+                    <Bell className="mr-2 h-4 w-4" />
+                    Send Notification
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -66,6 +77,11 @@ export default function DashboardPage() {
             </div>
 
             {/* Future: Recent Activity Table or Charts */}
+
+            <SendNotificationModal
+                isOpen={isNotificationModalOpen}
+                onClose={() => setIsNotificationModalOpen(false)}
+            />
         </div>
     );
 }

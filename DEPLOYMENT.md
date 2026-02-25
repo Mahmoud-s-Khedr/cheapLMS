@@ -84,8 +84,25 @@ To change the region, update the `region: 'europe-west1'` values in the respecti
 
 ### Deploy
 ```bash
-# Deploy everything (Firestore Rules + Functions)
-npx firebase deploy --only firestore,functions
+# Deploy everything (Firestore Rules + Storage Rules + Functions)
+npx firebase deploy --only firestore,storage,functions
+```
+
+### Configure Storage CORS (One-time)
+Firebase Storage requires a CORS policy to allow uploads directly from the web or admin app.
+1. Create a `cors.json` file in your root folder:
+```json
+[
+  {
+    "origin": ["*"],
+    "method": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+    "maxAgeSeconds": 3600
+  }
+]
+```
+2. Apply the policy using Google Cloud CLI:
+```bash
+gsutil cors set cors.json gs://YOUR_PROJECT_ID.firebasestorage.app
 ```
 
 ### One-time: Bootstrap an Admin user
@@ -113,6 +130,7 @@ Note: All Cloud Functions are deployed to the Paris region (europe-west1) for re
      VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
      VITE_FIREBASE_APP_ID=your_app_id
      VITE_CLOUDFLARE_WORKER_URL=https://your-worker.workers.dev
+     VITE_FIREBASE_VAPID_KEY=your_vapid_key
      ```
 
 2. **Google OAuth Configuration (Firebase Console)**
@@ -122,6 +140,12 @@ Note: All Cloud Functions are deployed to the Paris region (europe-west1) for re
      - `http://localhost:5173/` (with trailing slash)
      - `https://your-domain.com` (production)
    - Copy the Web Client ID if needed for advanced configurations.
+
+3. **Push Notifications (FCM) Configuration (Firebase Console)**
+   - Go to Firebase Console → Project Settings → Cloud Messaging.
+   - Scroll down to the **Web configuration** section.
+   - Under "Web Push certificates", click **Generate key pair**.
+   - Copy the generated key string and save it to `web-app/.env.local` as `VITE_FIREBASE_VAPID_KEY`.
 
 ### Run Locally
 ```bash
@@ -264,6 +288,11 @@ npx firebase deploy --only functions:bulkGrantAccess
 npx firebase deploy --only firestore:rules
 ```
 
+### Update Storage Rules
+```bash
+npx firebase deploy --only storage
+```
+
 ### Update Cloudflare Worker
 ```bash
 cd securestream-worker
@@ -290,8 +319,8 @@ Distribute the new binary from `src-tauri/target/release/bundle/`.
 
 ### Update Everything at Once
 ```bash
-# Backend (functions + rules)
-npx firebase deploy --only firestore,functions
+# Backend (functions + rules + storage)
+npx firebase deploy --only firestore,storage,functions
 
 # Frontend
 cd web-app && npm run build && cd ..
@@ -323,8 +352,11 @@ If you update `.env.local` values:
 ### Phase 2: Backend (Firebase)
 - [x] Create Firebase project in Console
 - [x] Enable Firestore Database
+- [x] Enable Firebase Storage
 - [x] Enable Firebase Authentication (Google provider)
 - [x] Deploy Firestore Security Rules: `npx firebase deploy --only firestore`
+- [x] Deploy Firebase Storage Rules: `npx firebase deploy --only storage`
+- [x] Apply Storage CORS policy using `gsutil cors set`
 - [x] Deploy Cloud Functions: `npx firebase deploy --only functions`
 - [x] Bootstrap admin user (if needed)
 - [x] Get Firebase Web config

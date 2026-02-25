@@ -1,14 +1,94 @@
 import { useState, useEffect } from "react";
 import { VideoService } from "../services/VideoService";
-import { Search, Trash2, Film, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, Trash2, Film, AlertCircle, RefreshCw, Edit2, Loader2, X } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useVideoQueue } from "../context/VideoQueueContext";
+import CommentsModal from "../components/CommentsModal";
+import { MessageSquare } from "lucide-react";
+
+function EditVideoModal({ isOpen, video, onClose, onSubmit }) {
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (video) {
+            setTitle(video.title || "");
+            setDescription(video.description || "");
+        }
+    }, [video]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            await onSubmit(video.id, { title, description });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold">Edit Video Details</h2>
+                    <button onClick={onClose}><X className="h-5 w-5 text-gray-500 hover:text-gray-700" /></button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Title</label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                            required
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Description (Optional)</label>
+                        <textarea
+                            rows={3}
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="flex justify-end space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                        >
+                            {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 export default function VideosPage() {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [deletingId, setDeletingId] = useState(null);
+    const [editingVideo, setEditingVideo] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [inspectingCommentsVideo, setInspectingCommentsVideo] = useState(null);
+    const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
 
     const { deleteVideo } = useVideoQueue();
 
@@ -63,6 +143,17 @@ export default function VideosPage() {
             alert(`Failed to delete video: ${error.message}`);
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleEditSubmit = async (id, data) => {
+        try {
+            await VideoService.update(id, data);
+            setVideos(prev => prev.map(v => v.id === id ? { ...v, ...data } : v));
+            setIsEditModalOpen(false);
+        } catch (error) {
+            console.error("Failed to update video:", error);
+            alert(`Failed to update video: ${error.message}`);
         }
     };
 
@@ -139,7 +230,27 @@ export default function VideosPage() {
                             </div>
 
                             {/* Actions */}
-                            <div className="p-3 border-t border-slate-50 bg-slate-50/50 flex justify-end">
+                            <div className="p-3 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-2">
+                                <button
+                                    onClick={() => {
+                                        setEditingVideo(video);
+                                        setIsEditModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setInspectingCommentsVideo(video);
+                                        setIsCommentsModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                                >
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    Comments
+                                </button>
                                 <button
                                     onClick={() => handleDelete(video)}
                                     disabled={deletingId === video.id}
@@ -157,6 +268,19 @@ export default function VideosPage() {
                     ))}
                 </div>
             )}
+
+            <EditVideoModal
+                isOpen={isEditModalOpen}
+                video={editingVideo}
+                onClose={() => setIsEditModalOpen(false)}
+                onSubmit={handleEditSubmit}
+            />
+
+            <CommentsModal
+                isOpen={isCommentsModalOpen}
+                video={inspectingCommentsVideo}
+                onClose={() => setIsCommentsModalOpen(false)}
+            />
         </div>
     );
 }
