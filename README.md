@@ -1,9 +1,8 @@
 <div align="center">
 
-# SecureStream LMS
+# 🚀 SecureStream LMS
 
-**A private, cost-optimized video streaming platform for course creators.**  
-Local-First architecture. Zero cloud transcoding costs. Under **$1/month** for 50 students.
+**A production-grade, local-first LMS that slashes hosting costs by 99% using Cloudflare R2 and client-side FFmpeg transcoding.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Tauri](https://img.shields.io/badge/Desktop-Tauri_(Rust)-orange?logo=rust)](https://tauri.app)
@@ -14,37 +13,68 @@ Local-First architecture. Zero cloud transcoding costs. Under **$1/month** for 5
 
 Built by **[Mahmoud Khedr](https://github.com/Mahmoud-s-Khedr)**
 
+*A portfolio piece demonstrating full-stack engineering, desktop application development, and cost-optimized cloud architecture.*
+
 </div>
 
 ---
 
-## Why This Exists
+## 🎯 The Pitch & Business Value
 
-Most video hosting platforms charge $50–$300+/month and offer little control over who sees your content. This project solves three hard problems for independent course creators:
+Most video hosting platforms charge $50–$300+/month and offer little control over who sees your content. This project solves hard problems for independent course creators, providing an enterprise-tier streaming experience on a bootstrapped budget:
 
-| Problem | This Solution |
+| Problem | SecureStream Solution & ROI |
 |---|---|
-| 💸 **High running costs** | Cloudflare R2 zero-egress storage keeps costs under $1/month for 50 students |
-| 🔓 **Link sharing & piracy** | Signed, scoped JWTs served as `HttpOnly` cookies — the URL is never exposed |
-| 🐌 **Slow upload pipelines** | Concurrent multipart uploads via the Tauri desktop app — 5–10× faster than sequential |
-| ☁️ **Expensive cloud transcoding** | FFmpeg runs **locally** as a Tauri sidecar — zero cloud processing cost |
+| 💸 **High running costs** | Cloudflare R2 zero-egress storage keeps costs under **$1/month** for 50 students. |
+| 🔓 **Link sharing & piracy** | Signed, scoped JWTs served as `HttpOnly` cookies — the URL is never exposed. |
+| 🐌 **Slow upload pipelines** | Concurrent multipart uploads via the Tauri desktop app — **5–10× faster** than sequential. |
+| ☁️ **Expensive cloud transcoding** | FFmpeg runs **locally** as a Tauri sidecar — **zero** cloud processing cost. |
 
 ---
 
-## Key Engineering Highlights
+## 👨‍💻 My Role & Engineering Highlights
 
-> These are the interesting parts, for engineers reviewing the project.
+I designed and built this system end-to-end to demonstrate full-stack capabilities across desktop, web, and serverless edge environments.
 
-- **Local-first transcoding pipeline** — The Tauri admin app embeds an FFmpeg sidecar. Videos are transcoded to HLS (360p–1080p adaptive bitrate) on the admin's machine before upload. No Lambda functions, no Mediaconvert costs.
-- **Concurrent multipart uploads** — The upload pipeline splits HLS segments into parallel S3-compatible multipart uploads to Cloudflare R2, saturating the admin's upload bandwidth.
-- **Scoped JWT tokens served as HttpOnly cookies** — Every `.m3u8` and `.ts` request goes through a Cloudflare Worker that validates a JWT scoped to a specific `videoPath`. The browser client never sees the token URL.
-- **Cloudflare R2 for zero-egress storage** — R2 has no egress fees vs. S3's $0.09/GB. For a video-heavy app this is the largest cost lever.
-- **Firestore security rules as the authorization layer** — Playlist access is enforced at the database level, not just the application layer. Users can only read playlists they have an `playlistAccess` document for.
-- **Adaptive bitrate with HLS.js** — The student player auto-switches between quality tiers based on network conditions, with a manual override selector.
+> These are the interesting parts, for engineers reviewing the project:
+
+- **Local-first transcoding pipeline:** The Tauri admin app embeds an FFmpeg sidecar. Videos are transcoded to HLS (360p–1080p adaptive bitrate) on the admin's machine before upload. No Lambda functions, no Mediaconvert costs.
+- **Concurrent multipart uploads:** The upload pipeline splits HLS segments into parallel S3-compatible multipart uploads to Cloudflare R2, saturating the admin's upload bandwidth.
+- **Scoped JWT tokens via HttpOnly cookies:** Every `.m3u8` and `.ts` request goes through a Cloudflare Worker that validates a JWT scoped to a specific `videoPath`. The browser client never sees the token URL.
+- **Cloudflare R2 for zero-egress storage:** R2 has no egress fees vs. S3's $0.09/GB. For a video-heavy app this is the largest cost lever.
+- **Firestore security rules:** Playlist access is enforced at the database level. Users can only read playlists they have a specific `playlistAccess` document for.
+- **Adaptive bitrate with HLS.js:** The student player auto-switches between quality tiers based on network conditions, mimicking YouTube/Netflix playback UX.
 
 ---
 
-## Architecture
+## 📸 Showcase & Demo
+
+*(Add high-quality screenshots or GIFs here to visually demonstrate the app!)*
+
+<details>
+<summary><b>View App Screenshots (Click to Expand)</b></summary>
+<br>
+
+### Admin Desktop (Tauri + Rust)
+| Main Dashboard | Video Upload & Transcoding Queue |
+| :---: | :---: |
+| <img src="./DOCS/images/admin-dashboard-desktop.png" width="400" alt="Admin Dashboard"> | <img src="./DOCS/images/video-upload-page.png" width="400" alt="Upload Queue"> |
+| *System overview and playlist management.* | *Local-first FFmpeg processing before upload.* |
+
+### Student Portal (React + Web)
+| Home / Course Library | Adaptive Bitrate Player |
+| :---: | :---: |
+| <img src="./DOCS/images/home-page.png" width="400" alt="Home Page"> | <img src="./DOCS/images/video-page.png" width="400" alt="Video Player"> |
+| *Clean interface for viewing available courses.* | *HLS player with tokenized security.* |
+
+</details>
+
+---
+
+## 🏗️ Architecture Overview
+
+<details>
+<summary><b>View System Architecture Diagram (Click to Expand)</b></summary>
 
 ```mermaid
 flowchart TB
@@ -81,6 +111,8 @@ flowchart TB
 
 > For a deep dive into design decisions, see [DOCS/ARCHITECTURE.md](./DOCS/ARCHITECTURE.md).
 
+</details>
+
 ---
 
 ## Components
@@ -93,12 +125,12 @@ The content management hub. Admins use this desktop app to transcode, upload, an
 | Feature | Implementation |
 |---|---|
 | **Video Processing** | FFmpeg sidecar → HLS segments (360p–1080p) |
-| **Configurable Segments** | HLS segment duration (2–60s) via Settings |
+| **Multimedia Uploads** | Direct uploading of PDFs/Assets to a public `multimedia/` R2 bucket |
 | **Thumbnail Generation** | Auto-extract frame at 25% or custom upload |
 | **Upload Pipeline** | Concurrent multipart uploads to R2 via S3 SDK |
 | **Queue System** | Batch processing with progress tracking, localStorage persistence |
-| **Playlist Management** | CRUD playlists via Firestore |
-| **User Management** | Grant/revoke playlist access per user |
+| **Playlist Management** | CRUD playlists, manage sub-items via Firestore |
+| **User Management** | Bulk grant/revoke playlist access per user |
 
 **Key files:**
 - `src-tauri/src/lib.rs` — Rust commands: `probe_media`, `process_video`, `generate_thumbnail`
@@ -115,10 +147,10 @@ The student-facing streaming portal. Deployed on Firebase Hosting.
 | Feature | Implementation |
 |---|---|
 | **Authentication** | Google OAuth via Firebase Auth |
-| **Authorization** | Role-based (admin/student), playlist-level access control |
+| **Push Notifications** | Real-time Firebase Cloud Messaging (FCM) integration |
 | **Video Player** | HLS.js with adaptive bitrate switching (auto/manual quality selector) |
+| **Multimedia & Comments** | Downloadable resources and real-time video discussion threads |
 | **Token Management** | `useVideoToken` hook with auto-refresh before expiry |
-| **Thumbnails** | Video thumbnails in playlist view, graceful fallback |
 
 **Key files:**
 - `src/components/VideoPlayer.jsx` — HLS.js player with quality selector
@@ -135,9 +167,9 @@ Serverless API endpoints for security-critical operations.
 | Endpoint | Purpose |
 |---|---|
 | `generateToken` | Mint scoped JWTs for video access (validates playlist permission) |
-| `grantAccess` | Admin grants user access to a playlist |
-| `revokeAccess` | Admin revokes user access |
-| `createVideo` | Create video metadata in Firestore |
+| `grantAccess` / `revokeAccess` | Admin manages user access to a specific playlist |
+| `bulkGrantAccess` / `bulkRevokeAccess` | Admin manages access for multiple users at once |
+| `createVideo` / `createMultimedia` | Create asset metadata in Firestore after R2 upload |
 | `bootstrapAdmin` | One-time admin account setup |
 
 **Trigger:**
@@ -185,8 +217,11 @@ Student login (Google OAuth)
 |---|---|---|
 | `users` | email, role, displayName | Read: self or admin |
 | `playlists` | title, description, videoCount, thumbnailUrl | Read: admin or granted users |
-| `videos` | title, playlistId, r2Path, thumbnailUrl, qualities, durationSeconds | Read: admin or playlist-granted users |
+| `videos` | title, playlistId, r2Path, durationSeconds | Read: admin or playlist-granted users |
 | `playlistAccess` | userId, playlistId, grantedBy, grantedAt | Read: self or admin |
+| `multimedia` | title, r2Path, sizeBytes, type | Read: authenticated users |
+| `notifications` | title, message, type, targetId | Read: self or "all" broadcast |
+| `comments` *(subcol)*| userId, content, timestamp | Read: authenticated users |
 
 ---
 
@@ -194,12 +229,12 @@ Student login (Google OAuth)
 
 | Layer | Technology |
 |---|---|
-| Admin Frontend | React, Tailwind CSS v4, Vite |
-| Admin Backend | Rust (Tauri), FFmpeg |
-| Web Frontend | React, Tailwind CSS, Vite, HLS.js |
+| Admin Frontend | React 19, Tailwind CSS v4, Vite |
+| Admin Backend | Rust (Tauri 2), FFmpeg |
+| Web Frontend | React 19, Tailwind CSS v4, Vite, HLS.js |
 | Auth | Firebase Authentication (Google OAuth) |
 | Database | Cloud Firestore |
-| Serverless API | Firebase Cloud Functions (Node.js) |
+| Serverless API | Firebase Cloud Functions (Node 22+) |
 | Storage | Cloudflare R2 (S3-compatible, zero egress) |
 | CDN/Security | Cloudflare Workers |
 | Hosting | Firebase Hosting |

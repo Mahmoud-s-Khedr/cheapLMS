@@ -1,6 +1,8 @@
-# Contributing to SecureStream LMS
+# 🤝 Contributing to SecureStream LMS
 
-Thank you for your interest in contributing! 🎉
+First off, thank you for considering contributing to SecureStream LMS! 🎉
+
+This project is built as a production-level, cost-optimized LMS, and we welcome contributions that improve stability, security, or developer experience. Whether it's fixing a bug, improving documentation, or proposing a new feature, your input is highly valued.
 
 ## How to Contribute
 

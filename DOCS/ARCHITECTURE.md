@@ -1,6 +1,12 @@
-# SecureStream LMS — Architecture Deep Dive
+# 🏗️ SecureStream LMS — Architecture Deep Dive
 
 > This document covers the "why" behind the major design decisions in SecureStream LMS. For setup instructions, see [DEPLOYMENT.md](../DEPLOYMENT.md).
+
+---
+
+## Executive Summary
+
+SecureStream LMS is engineered to solve the primary friction point of independent video hosting: **egress costs**. By shifting the intensive transcoding workload to the admin's local machine via a Rust/Tauri sidecar, and routing all video delivery through Cloudflare's zero-egress R2 storage, the system achieves near-zero operational costs ($1/month for 50 users). Security is enforced at the edge via Cloudflare Workers validating signed JWTs embedded in HttpOnly cookies, ensuring video links cannot be shared or pirated.
 
 ---
 
@@ -81,6 +87,8 @@ Student → Worker (validates JWT cookie) → R2 (private, no public URL)
 ```
 
 **Token scoping:** Each JWT contains the `videoPath` claim. Even if a student somehow extracted a token for Video A, it cannot be used to access Video B (the Worker checks `videoPath` against the request path).
+
+**Public Routes:** The Worker is configured to safely bypass JWT validation for specific prefixes (`thumbnails/` and `multimedia/`). This allows images and downloadable resources to be served directly from R2 without complex token management, while applying caching (`Cache-Control: public, max-age=3600`) and CORS headers.
 
 ---
 
@@ -172,17 +180,25 @@ users/{uid}
 
 playlists/{playlistId}
   title, description, videoCount, thumbnailUrl, coverUrl
+  └─ items/{itemId} (subcollection for ordered playlist contents)
 
 videos/{videoId}
   title, description, playlistId, r2Path, thumbnailUrl,
   qualities (array: [{label: '1080p', path: '...'}]),
   durationSeconds
+  └─ comments/{commentId} (subcollection for video discussion)
 
 playlistAccess/{userId_playlistId}
   userId, playlistId, grantedBy (adminUid), grantedAt
 
+multimedia/{multimediaId}
+  title, r2Path, sizeBytes, type
+
 notifications/{notificationId}
   title, message, type, targetId (uid or 'all'), createdAt
+
+uploadQueue/{itemId}
+  status, progress, files
 ```
 
 **Key design decisions:**

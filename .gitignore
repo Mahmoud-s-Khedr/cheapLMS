@@ -49,3 +49,5 @@ temp/
 
 #cloudflare
 .worker_url
+
+DOCS/internal-notes/
